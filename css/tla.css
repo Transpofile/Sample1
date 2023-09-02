@@ -4,7 +4,7 @@
 	margin: 0;
 	box-sizing: border-box;
 }
-body{	background-color:#FFC5C9;
+body{	background-color:#FFC5C9; background-image: url("img/backgroundplant.jpg");
 			width: 100%;
 			height:auto;
 			font-family: 'Poppins', sans-serif;}
