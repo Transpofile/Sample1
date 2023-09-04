@@ -30,7 +30,7 @@ body{	background-image:url("../img/backgroundplant.JPG");
 	align-items: center;
 }
 .img img{
-		width: 360px;
+		width: 500px;
 }
 .login-container{
 	display: flex;
