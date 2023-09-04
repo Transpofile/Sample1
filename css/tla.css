@@ -7,7 +7,7 @@
 body{	background-image:url("../img/backgroundplant.JPG");
      			opacity:70%;
 			width: 40%;
-			height:10rem;
+			height:auto;
 			font-family: 'Poppins', sans-serif;}
 
 .wave{position: fixed;
