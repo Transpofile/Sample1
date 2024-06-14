@@ -4,7 +4,8 @@
 	margin: 0;
 	box-sizing: border-box;
 }
-body{	background-image:url("../img/backgroundplant.JPG");
+body{	/*background-image:url("../img/backgroundplant.JPG");*/
+	background-color:whitesmoke;
      			opacity:70%;
 			width: 40%;
 			height:auto;
