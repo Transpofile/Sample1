@@ -6,8 +6,8 @@
 }
 body{	background-image:url("../img/backgroundplant.JPG");
      			opacity:70%;
-			width: 40%;
-			height:auto;
+			width: 50%;
+			height:50%;
 			font-family: 'Poppins', sans-serif;}
 
 .wave{position: fixed;
