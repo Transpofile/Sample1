@@ -4,8 +4,7 @@
 	margin: 0;
 	box-sizing: border-box;
 }
-body{	/*background-image:url("../img/backgroundplant.JPG");*/
-	background-color:#040720;
+body{	background-image:url("https://images.rawpixel.com/image_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvcHg4MjUyMjAtaW1hZ2Utam9iNjMwLWFfMS1sMGcwOWk5ZC5qcGc.jpg");
      			opacity:70%;
 			width: 40%;
 			height:auto;
