@@ -1,75 +1,743 @@
-
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-	<title>Login</title>
-	<meta name="viewport content="width=device-width, initial-scale=1">
- <link rel="stylesheet" href="css/tla.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-<script src="https:kit.fontawesome.com/a81368914c.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kwangkoh 9th Anniv - Live Hub</title>
+    
+    <!-- FONTS & ICONS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- LIBRARIES -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- SUPABASE SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+    <style>
+        :root {
+            --bg-grad: linear-gradient(135deg, #0f172a 0%, #020617 100%);
+            --card-bg: rgba(30, 41, 59, 0.6);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f1f5f9;
+            --text-sub: #94a3b8;
+            --accent: #fbbf24;
+            --accent-glow: rgba(251, 191, 36, 0.4);
+            --danger: #ef4444;
+            --success: #10b981;
+            --nav-height: 65px;
+            --font-head: 'Rajdhani', sans-serif;
+            --font-body: 'Inter', sans-serif;
+        }
+
+        /* THEME VARIANTS */
+        body.theme-basketball { --bg-grad: linear-gradient(135deg, #1a0b00 0%, #000 100%); --accent: #f97316; --accent-glow: rgba(249, 115, 22, 0.5); }
+        body.theme-mlbb { --bg-grad: linear-gradient(135deg, #130a26 0%, #05020a 100%); --accent: #c084fc; --accent-glow: rgba(192, 132, 252, 0.5); }
+        body.theme-pool { --bg-grad: linear-gradient(135deg, #022c22 0%, #000 100%); --accent: #34d399; --accent-glow: rgba(52, 211, 153, 0.5); }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+
+        body {
+            background: var(--bg-grad);
+            background-attachment: fixed;
+            color: var(--text-main);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            padding-bottom: 100px;
+            overflow-x: hidden;
+        }
+
+        /* --- UTILS --- */
+        .glass { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--card-border); }
+        .card { background: var(--card-bg); backdrop-filter: blur(10px); border-radius: 16px; padding: 20px; border: 1px solid var(--card-border); margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; }
+        
+        .btn { border: none; cursor: pointer; border-radius: 8px; font-family: var(--font-head); font-weight: 700; text-transform: uppercase; padding: 10px 18px; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; justify-content: center; }
+        .btn-primary { background: var(--accent); color: #000; box-shadow: 0 0 15px var(--accent-glow); }
+        .btn-primary:active { transform: scale(0.96); }
+        .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+        .btn-ghost { background: rgba(255,255,255,0.05); color: var(--text-sub); border: 1px solid var(--card-border); }
+        .btn-ghost.active { background: var(--accent); color: black; border-color: var(--accent); }
+        .btn-danger { background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid var(--danger); }
+
+        /* --- ANIMATIONS --- */
+        @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+        @keyframes slideUp { from{opacity:0; transform:translateY(20px);} to{opacity:1; transform:translateY(0);} }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        .loading-spinner { border: 4px solid rgba(255,255,255,0.1); border-left-color: var(--accent); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* --- COMPONENTS --- */
+        .ticker-wrap { position: fixed; top: 0; width: 100%; height: 30px; background: #000; z-index: 101; display: flex; align-items: center; border-bottom: 1px solid #222; overflow: hidden; }
+        .ticker { display: flex; animation: ticker 30s linear infinite; white-space: nowrap; padding-left: 100%; }
+        .ticker-item { padding: 0 2rem; color: #aaa; font-size: 0.8rem; font-family: var(--font-head); letter-spacing: 1px; }
+
+        .navbar { padding: 0 20px; height: var(--nav-height); position: sticky; top: 30px; z-index: 100; display: flex; justify-content: space-between; align-items: center; transition: background 0.3s; }
+        .brand { font-family: var(--font-head); font-weight: 800; font-size: 1.6rem; letter-spacing: -0.5px; color: white; display: flex; align-items: center; gap: 8px; }
+        .brand i { color: var(--accent); filter: drop-shadow(0 0 8px var(--accent)); }
+        
+        .hero { 
+            padding: 40px 20px 20px; text-align: center; 
+            background: linear-gradient(to bottom, transparent, var(--bg-grad));
+            position: relative; overflow: hidden;
+        }
+        .hero::before { content:''; position: absolute; top:-50%; left:-50%; width:200%; height:200%; background: radial-gradient(circle, var(--accent-glow) 0%, transparent 60%); opacity: 0.15; pointer-events: none; }
+        .hero-title { font-family: var(--font-head); font-size: 3rem; font-weight: 800; line-height: 0.9; margin: 10px 0; text-transform: uppercase; letter-spacing: -1px; text-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        
+        .nav-tabs { 
+            display: flex; gap: 10px; padding: 10px 20px; overflow-x: auto; 
+            position: sticky; top: calc(30px + var(--nav-height)); z-index: 90;
+            background: var(--bg-grad); border-bottom: 1px solid var(--card-border);
+            -ms-overflow-style: none; scrollbar-width: none;
+        }
+        .nav-tabs::-webkit-scrollbar { display: none; }
+        .tab-btn { flex-shrink: 0; white-space: nowrap; }
+
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; min-height: 60vh; }
+        .panel { display: none; animation: slideUp 0.3s ease-out; }
+        .panel.active { display: block; }
+
+        /* MATCH CARD */
+        .match-card {
+            background: linear-gradient(145deg, rgba(30,41,59,0.7), rgba(15,23,42,0.8));
+            border-radius: 16px; padding: 0; margin-bottom: 20px; border: 1px solid var(--card-border);
+            position: relative; overflow: hidden; transition: transform 0.2s;
+            cursor: pointer;
+        }
+        .match-card:active { transform: scale(0.98); }
+        .m-header { padding: 10px 15px; background: rgba(0,0,0,0.3); font-size: 0.75rem; color: var(--text-sub); display: flex; justify-content: space-between; border-bottom: 1px solid var(--card-border); }
+        .m-body { display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; padding: 20px 10px; position: relative; }
+        
+        .m-team { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 2; }
+        .m-logo { 
+            width: 50px; height: 50px; border-radius: 50%; background: #0f172a; display: grid; place-items: center; 
+            font-weight: 800; font-size: 1.2rem; border: 2px solid rgba(255,255,255,0.1); 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); position: relative;
+        }
+        .winner .m-logo { border-color: var(--accent); box-shadow: 0 0 15px var(--accent-glow); color: var(--accent); }
+        .winner .m-logo::after { content: '\f091'; font-family: "Font Awesome 6 Free"; position: absolute; top: -10px; right: -5px; font-size: 14px; background: var(--accent); color: #000; border-radius: 50%; width: 20px; height: 20px; display: grid; place-items: center; }
+
+        .m-score { text-align: center; font-family: var(--font-head); z-index: 2; }
+        .score-txt { font-size: 2.2rem; font-weight: 800; line-height: 1; letter-spacing: 2px; }
+        .status-badge { display: inline-block; padding: 2px 8px; font-size: 0.7rem; border-radius: 4px; background: #333; color: #aaa; margin-top: 5px; font-weight: bold; }
+        .status-badge.live { background: var(--danger); color: white; animation: pulse-red 2s infinite; text-transform: uppercase; }
+        .status-badge.final { background: var(--success); color: #000; text-transform: uppercase; }
+
+        .vote-bar { margin: 0 15px 15px; height: 6px; background: #333; border-radius: 3px; position: relative; overflow: hidden; display: flex; }
+        .vote-fill { height: 100%; background: var(--accent); transition: width 0.5s; }
+        .vote-meta { display: flex; justify-content: space-between; padding: 0 15px 5px; font-size: 0.7rem; color: var(--text-sub); }
+
+        /* GRID & LISTS */
+        .teams-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
+        .team-folder {
+            background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px;
+            padding: 20px 10px; text-align: center; cursor: pointer; position: relative; overflow: hidden;
+        }
+        .team-folder:hover { border-color: var(--accent); background: rgba(255,255,255,0.03); }
+        .team-folder h4 { font-size: 0.9rem; margin-top: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* MODALS */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; display: none; place-items: center; backdrop-filter: blur(5px); padding: 20px; }
+        .modal-box { background: #1e293b; border: 1px solid var(--card-border); padding: 25px; border-radius: 20px; width: 100%; max-width: 400px; animation: slideUp 0.2s; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        
+        .inp { width: 100%; padding: 12px 15px; margin-bottom: 15px; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 8px; font-family: var(--font-body); }
+        .inp:focus { border-color: var(--accent); }
+        .inp-group { display: flex; gap: 10px; }
+        
+        /* TOAST */
+        .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1e293b; color: white; padding: 12px 20px; border-radius: 30px; display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); opacity: 0; transition: 0.3s; pointer-events: none; z-index: 2000; border: 1px solid var(--card-border); }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+        /* FAB */
+        .fab { position: fixed; bottom: 30px; right: 20px; z-index: 900; }
+        .fab-btn { width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: #000; border: none; font-size: 1.4rem; box-shadow: 0 4px 20px var(--accent-glow); cursor: pointer; display: grid; place-items: center; transition: 0.3s; }
+        .fab-menu { position: absolute; bottom: 70px; right: 0; display: flex; flex-direction: column; gap: 10px; align-items: flex-end; pointer-events: none; opacity: 0; transform: translateY(10px); transition: 0.2s; }
+        .fab.active .fab-menu { pointer-events: auto; opacity: 1; transform: translateY(0); }
+        .fab.active .fab-btn { transform: rotate(45deg); }
+        .fab-item { background: #1e293b; color: white; padding: 8px 16px; border-radius: 20px; border: 1px solid var(--card-border); font-size: 0.9rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 8px; }
+
+        /* Admin Lock */
+        .admin-lock { text-align: center; padding: 40px 20px; }
+    </style>
 </head>
+<body class="theme-default">
 
+    <!-- TICKER -->
+    <div class="ticker-wrap">
+        <div class="ticker" id="news-ticker">
+            <div class="ticker-item">Loading live updates...</div>
+        </div>
+    </div>
 
+    <!-- NAVBAR -->
+    <nav class="navbar glass">
+        <div class="brand">
+            <i class="fas fa-bolt"></i> KWANGKOH FAMILY
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="toggleTheme()" style="border-radius: 20px;">
+            <i class="fas fa-palette"></i>
+        </button>
+    </nav>
 
-<?php
-echo "Welcome Home";
+    <!-- HERO -->
+    <div class="hero">
+        <div style="display:inline-block; background:var(--accent); color:#000; padding:4px 12px; border-radius:20px; font-weight:800; font-size:0.75rem; margin-bottom:10px; font-family:var(--font-head);">9TH ANNIVERSARY</div>
+        <h1 class="hero-title">KWANGKOH<br>COMPOUND</h1>
+        <p style="color:var(--text-sub); font-size:0.9rem;">Real-time Database Powered</p>
+    </div>
 
-	
-?>
+    <!-- NAV TABS -->
+    <div class="nav-tabs">
+        <button class="btn btn-ghost tab-btn active" onclick="switchTab('matches')"><i class="fas fa-basketball-ball"></i> Matches</button>
+        <button class="btn btn-ghost tab-btn" onclick="switchTab('standings')"><i class="fas fa-list-ol"></i> Standings</button>
+        <button class="btn btn-ghost tab-btn" onclick="switchTab('feed')"><i class="fas fa-comments"></i> Social</button>
+        <button class="btn btn-ghost tab-btn" onclick="switchTab('teams')"><i class="fas fa-users"></i> Teams</button>
+        <button class="btn btn-ghost tab-btn" onclick="switchTab('admin')"><i class="fas fa-lock"></i> Admin</button>
+    </div>
 
+    <div class="container">
+        
+        <!-- LOADER -->
+        <div id="main-loader" style="text-align:center; padding-top:50px;">
+            <div class="loading-spinner"></div>
+            <p style="color:var(--text-sub)">Connecting to Supabase...</p>
+        </div>
 
+        <!-- MATCHES PANEL -->
+        <div id="view-matches" class="panel">
+            <div class="flex-between" style="margin-bottom:15px">
+                <h3 style="font-family:var(--font-head); color:var(--text-sub)">SCHEDULE</h3>
+                <div style="display:flex; gap:5px;">
+                    <button class="btn btn-ghost btn-sm active" id="filter-all" onclick="filterMatches('all')">All</button>
+                    <button class="btn btn-ghost btn-sm" id="filter-live" onclick="filterMatches('live')">Live</button>
+                </div>
+            </div>
+            <div id="matches-container"></div>
+            <div id="no-matches" style="text-align:center; padding:40px; color:var(--text-sub); display:none">
+                <i class="fas fa-clipboard-list" style="font-size:3rem; margin-bottom:15px; opacity:0.2"></i>
+                <p>No matches found.</p>
+            </div>
+        </div>
 
-	
-<body>
+        <!-- STANDINGS PANEL -->
+        <div id="view-standings" class="panel">
+            <div class="card">
+                <div class="flex-between" style="margin-bottom:20px;">
+                    <h3 style="font-family:var(--font-head)">RANKINGS</h3>
+                    <select id="sport-filter" class="inp" style="width:auto; margin:0; padding:6px 12px;" onchange="loadStandings()">
+                        <option value="Basketball">Basketball</option>
+                        <option value="MLBB">MLBB</option>
+                        <option value="Pool">Pool</option>
+                    </select>
+                </div>
+                <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+                    <thead style="border-bottom:1px solid var(--card-border); color:var(--text-sub); font-size:0.75rem; text-align:left;">
+                        <tr><th style="padding:10px">#</th><th>TEAM</th><th>W</th><th>L</th><th>PTS</th></tr>
+                    </thead>
+                    <tbody id="standings-body"></tbody>
+                </table>
+            </div>
+        </div>
 
-<img class="wave" src="img/background.png">
-<div class="container">
-		<div class="img">
-			<img src="img/phone.svg">
-		</div>
-		<div class="login-container">
-			<form action="index.html">
-				<img class="avatar"src="img/avatar.svg">
-				<h2>Members Login</br>
-					<span style="font-size:2vh;">TAGANITO HPAL NICKEL CORPORATION</span>
-				</h2>
-				<div class="input-div one">
-					<div class="i">
-						<i class="fas fa-user"></i>
-					</div>
-					<div>
-						<h5>Company I.D</h5>
-						<input class="input" type="number">
-			</div>
-		</div>
-			<div class="input-div two">
-				<div class="i">
-					<i class="fas fa-lock"></i>
-				</div>
-			<div>
-					<h5>Password</h5>
-					<input class="input" type="password">
-		</div>
-	</div>
-		<a href="#">Forgot Password?</a>
-		<a href="#">Register</a>
-		<input type="submit" class="btn" value="login"></br>
+        <!-- SOCIAL FEED PANEL -->
+        <div id="view-feed" class="panel">
+            <div class="card">
+                <div style="display:flex; gap:10px;">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=User" style="width:40px; height:40px; border-radius:50%; background:#333;">
+                    <textarea id="post-input" class="inp" rows="2" style="background:transparent; border:none; resize:none; padding:10px 0;" placeholder="Say something..."></textarea>
+                </div>
+                <div style="text-align:right; border-top:1px solid var(--card-border); padding-top:10px;">
+                    <button class="btn btn-primary btn-sm" onclick="createPost()">POST</button>
+                </div>
+            </div>
+            <div id="social-feed"></div>
+        </div>
 
-		<p align="left" style="font-size:11px;">Only Employee's to be login by using there Company I.D and there own password, this website is to easy access to all employee's that to knows
-		exact information for the company, events, activities, communities and the policies, this website is designed to adopt new environment technology
-		this website is control and monitor by the I.T Expert, security, and the tracker.. you cannot share this website to other mobile phone,laptops and desktop automatic
-		to be logout, and your number and I.P Address will be trace by sharing this website. this website is intended for the employee's information only.</p>
+        <!-- TEAMS PANEL -->
+        <div id="view-teams" class="panel">
+            <div class="flex-between" style="margin-bottom:15px;">
+                 <input type="text" id="team-search" class="inp" placeholder="Search teams..." onkeyup="renderTeams()" style="margin-bottom:0">
+                 <button class="btn btn-primary btn-sm" onclick="openTeamModal()">+ New</button>
+            </div>
+            <div id="teams-grid" class="teams-grid"></div>
+        </div>
 
-				
-	</form>
+        <!-- ADMIN PANEL -->
+        <div id="view-admin" class="panel">
+            <!-- LOCKED STATE -->
+            <div id="admin-locked" class="admin-lock">
+                <i class="fas fa-user-shield" style="font-size:3rem; color:var(--text-sub); margin-bottom:20px;"></i>
+                <h3>Admin Access</h3>
+                <p style="color:var(--text-sub); margin-bottom:20px;">Enter PIN (1234) to manage database.</p>
+                <div class="inp-group" style="justify-content:center; max-width:200px; margin:0 auto 15px;">
+                    <input type="password" id="admin-pin" class="inp" style="text-align:center; letter-spacing:5px; font-size:1.2rem;" maxlength="4" placeholder="••••">
+                </div>
+                <button class="btn btn-primary" onclick="unlockAdmin()">UNLOCK</button>
+            </div>
 
-</div>
-</div>
-<script type="text/javascript" src="js/main.js"/></script>
+            <!-- UNLOCKED STATE -->
+            <div id="admin-unlocked" style="display:none;">
+                <div class="card">
+                    <h3 style="margin-bottom:15px;">MATCH CONTROL</h3>
+                    <button class="btn btn-primary" style="width:100%; margin-bottom:10px;" onclick="openMatchModal()">+ Create Match</button>
+                    <p style="font-size:0.8rem; color:var(--text-sub)">Tap matches in the "Matches" tab to edit scores/status.</p>
+                </div>
+            </div>
+        </div>
 
+    </div>
 
+    <!-- MODALS -->
+    
+    <!-- Create Team -->
+    <div id="team-create-modal" class="modal-overlay">
+        <div class="modal-box">
+             <div class="flex-between" style="margin-bottom:20px">
+                <h3>NEW TEAM</h3>
+                <i class="fas fa-times" onclick="closeModals()" style="cursor:pointer"></i>
+            </div>
+            <form id="createTeamForm">
+                <input type="text" id="new-team-name" class="inp" placeholder="Team Name" required>
+                <input type="text" id="new-team-logo" class="inp" placeholder="Logo Text (2 letters)" maxlength="2" required>
+                <select id="new-team-sport" class="inp">
+                    <option value="Basketball">Basketball</option>
+                    <option value="MLBB">MLBB</option>
+                    <option value="Pool">Pool</option>
+                </select>
+                <button type="submit" class="btn btn-primary" style="width:100%">CREATE TEAM</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Match Edit -->
+    <div id="match-modal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="flex-between" style="margin-bottom:20px">
+                <h3>MATCH DETAILS</h3>
+                <i class="fas fa-times" onclick="closeModals()" style="cursor:pointer"></i>
+            </div>
+            <form id="matchForm">
+                <input type="hidden" id="m-id">
+                <select id="m-game" class="inp" onchange="loadTeamOptions(this.value)">
+                    <option value="Basketball">Basketball</option>
+                    <option value="MLBB">MLBB</option>
+                    <option value="Pool">Pool</option>
+                </select>
+                
+                <div class="inp-group">
+                    <select id="m-t1-select" class="inp"></select>
+                    <input type="number" id="m-s1" class="inp" placeholder="0" style="width:80px">
+                </div>
+                
+                <div style="text-align:center; color:var(--text-sub); margin: -10px 0 10px; font-weight:bold; font-size:0.8rem;">VS</div>
+                
+                <div class="inp-group">
+                    <select id="m-t2-select" class="inp"></select>
+                    <input type="number" id="m-s2" class="inp" placeholder="0" style="width:80px">
+                </div>
+                
+                <label style="font-size:0.8rem; color:var(--text-sub)">Match Status</label>
+                <select id="m-status" class="inp" style="margin-top:5px;">
+                    <option value="UPCOMING">Upcoming</option>
+                    <option value="LIVE">Live</option>
+                    <option value="FINAL">Final</option>
+                </select>
+                <button type="submit" class="btn btn-primary" style="width:100%">SAVE TO DB</button>
+                <button type="button" id="btn-delete-match" class="btn btn-danger" style="width:100%; margin-top:10px; display:none" onclick="deleteMatch()">DELETE</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast-box"></div>
+
+    <script>
+        // --- CONFIGURATION ---
+        // REPLACE THE URL BELOW WITH YOUR ACTUAL SUPABASE URL
+        const SUPABASE_URL = 'https://YOUR_SUPABASE_PROJECT_ID.supabase.co'; 
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpcnJhYmtvanh6emlsZ2RjcmF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NjY4MjEsImV4cCI6MjA3NDQ0MjgyMX0._XUe8Mk7jjY4RGyzaJ44mN5slfIP8pPYLNjcJYQkg-g';
+        
+        let supabase;
+        let localMatches = [];
+        let localTeams = [];
+        let isAdmin = false;
+        let currentFilter = 'all';
+
+        // --- INIT ---
+        window.onload = async () => {
+            try {
+                if(SUPABASE_URL.includes('YOUR_SUPABASE')) {
+                    alert("Please edit the HTML file and add your Supabase URL in the script tag!");
+                }
+                
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                
+                await Promise.all([fetchTeams(), fetchMatches(), fetchPosts()]);
+                setupRealtime();
+                
+                document.getElementById('main-loader').style.display = 'none';
+                document.getElementById('view-matches').classList.add('active');
+                
+            } catch (err) {
+                console.error(err);
+                document.getElementById('main-loader').innerHTML = '<p style="color:red">Connection Failed. Check Console.</p>';
+            }
+        };
+
+        // --- DATA FETCHING ---
+        async function fetchTeams() {
+            const { data, error } = await supabase.from('teams').select('*');
+            if(data) {
+                localTeams = data;
+                renderTeams();
+            }
+        }
+
+        async function fetchMatches() {
+            // Join teams table to get names
+            const { data, error } = await supabase
+                .from('matches')
+                .select(`*, t1:teams!team1_id(name, logo_text), t2:teams!team2_id(name, logo_text)`)
+                .order('created_at', { ascending: false });
+                
+            if(data) {
+                localMatches = data;
+                renderMatches();
+                updateTicker();
+            }
+        }
+
+        async function fetchPosts() {
+            const { data, error } = await supabase.from('posts').select('*').order('created_at', { ascending: false }).limit(20);
+            if(data) renderFeed(data);
+        }
+
+        async function loadStandings() {
+            const sport = document.getElementById('sport-filter').value;
+            // Fetch from the SQL View we created
+            const { data, error } = await supabase.from('team_standings').select('*').eq('sport', sport).order('pts', {ascending: false});
+            
+            const tbody = document.getElementById('standings-body');
+            tbody.innerHTML = '';
+            
+            if(!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#666">No data yet</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map((t, i) => `
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+                    <td style="padding:12px 10px;">${i+1}</td>
+                    <td style="font-weight:700;">${t.name}</td>
+                    <td>${t.wins}</td>
+                    <td>${t.losses}</td>
+                    <td style="color:var(--accent); font-weight:bold;">${t.pts}</td>
+                </tr>
+            `).join('');
+        }
+
+        // --- REALTIME SUBSCRIPTION ---
+        function setupRealtime() {
+            supabase.channel('public:matches')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, () => {
+                    fetchMatches(); // Reload matches on any change
+                    loadStandings(); // Reload standings as scores might change
+                    showToast('Scores Updated!', 'fas fa-sync');
+                })
+                .subscribe();
+
+            supabase.channel('public:posts')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, payload => {
+                    const newPost = payload.new;
+                    const container = document.getElementById('social-feed');
+                    container.insertAdjacentHTML('afterbegin', buildPostHTML(newPost));
+                })
+                .subscribe();
+        }
+
+        // --- UI RENDERING ---
+        function renderMatches() {
+            const container = document.getElementById('matches-container');
+            let list = localMatches.sort((a,b) => (a.status === 'LIVE' ? -1 : 1));
+            
+            if(currentFilter === 'live') list = list.filter(m => m.status === 'LIVE');
+            
+            if(list.length === 0) {
+                container.innerHTML = '';
+                document.getElementById('no-matches').style.display = 'block';
+                return;
+            }
+            document.getElementById('no-matches').style.display = 'none';
+
+            container.innerHTML = list.map(m => {
+                const isFinal = m.status === 'FINAL';
+                const t1Win = isFinal && m.score1 > m.score2 ? 'winner' : '';
+                const t2Win = isFinal && m.score2 > m.score1 ? 'winner' : '';
+                
+                const v1 = m.votes1 || 0; const v2 = m.votes2 || 0;
+                const total = v1 + v2;
+                const p1 = total === 0 ? 50 : Math.round((v1/total)*100);
+                
+                // Determine Icon
+                const icon = m.game === 'Basketball' ? 'fa-basketball-ball' : m.game === 'MLBB' ? 'fa-mobile-alt' : 'fa-circle';
+
+                return `
+                <div class="match-card" onclick="handleMatchClick(${m.id})">
+                    <div class="m-header">
+                        <span><i class="fas ${icon}"></i> ${m.game}</span>
+                        <span>${m.status === 'UPCOMING' ? 'TBA' : m.status}</span>
+                    </div>
+                    <div class="m-body">
+                        <div class="m-team ${t1Win}">
+                            <div class="m-logo">${m.t1?.logo_text || '?'}</div>
+                            <div style="font-weight:700; font-size:0.9rem">${m.t1?.name || 'Unknown'}</div>
+                        </div>
+                        <div class="m-score">
+                            <div class="status-badge ${m.status.toLowerCase()}">${m.status}</div>
+                            <div class="score-txt">${m.score1} - ${m.score2}</div>
+                        </div>
+                        <div class="m-team ${t2Win}">
+                            <div class="m-logo">${m.t2?.logo_text || '?'}</div>
+                            <div style="font-weight:700; font-size:0.9rem">${m.t2?.name || 'Unknown'}</div>
+                        </div>
+                    </div>
+                    <div class="vote-meta">
+                        <span>${p1}% Pick</span>
+                        <span>${100-p1}% Pick</span>
+                    </div>
+                    <div class="vote-bar" onclick="event.stopPropagation(); voteMatch(${m.id})">
+                        <div class="vote-fill" style="width:${p1}%"></div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function updateTicker() {
+            const liveMatches = localMatches.filter(m => m.status === 'LIVE');
+            const ticker = document.getElementById('news-ticker');
+            if(liveMatches.length > 0) {
+                ticker.innerHTML = liveMatches.map(m => 
+                    `<div class="ticker-item"><i class="fas fa-circle" style="color:var(--danger)"></i> LIVE: ${m.t1.name} ${m.score1} - ${m.score2} ${m.t2.name} (${m.game})</div>`
+                ).join('');
+            } else {
+                ticker.innerHTML = `<div class="ticker-item">Welcome to Kwangkoh 9th Anniversary! Check Schedule for upcoming games.</div>`;
+            }
+        }
+
+        function renderTeams() {
+            const search = document.getElementById('team-search').value.toLowerCase();
+            const container = document.getElementById('teams-grid');
+            
+            const filtered = localTeams.filter(t => t.name.toLowerCase().includes(search));
+            
+            container.innerHTML = filtered.map(t => `
+                <div class="team-folder">
+                    <div class="m-logo" style="margin:0 auto 10px; font-size:1.1rem; color:#fff; border-color:rgba(255,255,255,0.1)">${t.logo_text}</div>
+                    <h4>${t.name}</h4>
+                    <small style="color:var(--text-sub)">${t.sport}</small>
+                </div>
+            `).join('');
+        }
+
+        // --- ACTIONS ---
+        function switchTab(id) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`view-${id}`).classList.add('active');
+            
+            const btns = document.querySelectorAll('.tab-btn');
+            btns.forEach(b => {
+                if(b.getAttribute('onclick').includes(id)) b.classList.add('active');
+            });
+            
+            if(id === 'standings') loadStandings();
+        }
+
+        function filterMatches(type) {
+            currentFilter = type;
+            document.querySelectorAll('#view-matches .btn-ghost').forEach(b => b.classList.remove('active'));
+            document.getElementById(`filter-${type}`).classList.add('active');
+            renderMatches();
+        }
+
+        // --- VOTING ---
+        async function voteMatch(id) {
+            const m = localMatches.find(x => x.id === id);
+            if(m.status === 'FINAL') return showToast('Voting Closed');
+
+            // Simple client-side random vote for demo (Prevent spam via localstorage in prod)
+            const teamNum = Math.random() > 0.5 ? 1 : 2; 
+            const update = teamNum === 1 ? { votes1: (m.votes1||0)+1 } : { votes2: (m.votes2||0)+1 };
+
+            const { error } = await supabase.from('matches').update(update).eq('id', id);
+            if(!error) {
+                showToast('Vote Submitted!');
+                confetti({ particleCount: 30, spread: 60, origin: { y: 0.7 }, colors: ['#fbbf24'] });
+            }
+        }
+
+        // --- SOCIAL ---
+        function buildPostHTML(p) {
+            return `
+                <div class="card" style="margin-bottom:15px; padding:15px">
+                    <div style="display:flex; gap:10px; margin-bottom:8px">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${p.avatar_seed}" style="width:32px; height:32px; border-radius:50%">
+                        <div>
+                            <div style="font-weight:bold; font-size:0.9rem">${p.author}</div>
+                            <div style="font-size:0.7rem; color:var(--text-sub)">${new Date(p.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                        </div>
+                    </div>
+                    <div style="color:#eee; font-size:0.95rem; line-height:1.4">${p.content}</div>
+                </div>`;
+        }
+        
+        function renderFeed(posts) {
+            document.getElementById('social-feed').innerHTML = posts.map(buildPostHTML).join('');
+        }
+
+        async function createPost() {
+            const txt = document.getElementById('post-input').value.trim();
+            if(!txt) return;
+            
+            const { error } = await supabase.from('posts').insert({
+                author: "Guest Fan",
+                content: txt,
+                avatar_seed: Date.now().toString()
+            });
+
+            if(!error) {
+                document.getElementById('post-input').value = '';
+                showToast("Posted!");
+            }
+        }
+
+        // --- ADMIN & MODALS ---
+        function unlockAdmin() {
+            const pin = document.getElementById('admin-pin').value;
+            if(pin === '1234') {
+                isAdmin = true;
+                document.getElementById('admin-locked').style.display = 'none';
+                document.getElementById('admin-unlocked').style.display = 'block';
+                showToast('Admin Mode Unlocked', 'fas fa-unlock');
+            } else {
+                showToast('Incorrect PIN');
+            }
+        }
+
+        function handleMatchClick(id) {
+            if(isAdmin) editMatch(id);
+            else voteMatch(id);
+        }
+
+        function openMatchModal() {
+            document.getElementById('matchForm').reset();
+            document.getElementById('m-id').value = '';
+            document.getElementById('btn-delete-match').style.display='none';
+            document.getElementById('match-modal').style.display='grid';
+            loadTeamOptions('Basketball'); // Default
+        }
+
+        function openTeamModal() {
+            document.getElementById('createTeamForm').reset();
+            document.getElementById('team-create-modal').style.display='grid';
+        }
+
+        function loadTeamOptions(sport) {
+            const filtered = localTeams.filter(t => t.sport === sport);
+            const opts = filtered.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+            document.getElementById('m-t1-select').innerHTML = opts;
+            document.getElementById('m-t2-select').innerHTML = opts;
+        }
+
+        function editMatch(id) {
+            const m = localMatches.find(x => x.id === id);
+            if(!m) return;
+            
+            loadTeamOptions(m.game);
+            
+            document.getElementById('m-id').value = m.id;
+            document.getElementById('m-game').value = m.game;
+            setTimeout(() => {
+                document.getElementById('m-t1-select').value = m.team1_id;
+                document.getElementById('m-t2-select').value = m.team2_id;
+            }, 100);
+            
+            document.getElementById('m-s1').value = m.score1;
+            document.getElementById('m-s2').value = m.score2;
+            document.getElementById('m-status').value = m.status;
+            
+            document.getElementById('btn-delete-match').style.display='block';
+            document.getElementById('match-modal').style.display='grid';
+        }
+
+        // Create Team
+        document.getElementById('createTeamForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                name: document.getElementById('new-team-name').value,
+                logo_text: document.getElementById('new-team-logo').value.toUpperCase(),
+                sport: document.getElementById('new-team-sport').value
+            };
+            
+            const { error } = await supabase.from('teams').insert(data);
+            if(!error) {
+                closeModals();
+                fetchTeams(); // Reload teams
+                showToast('Team Created');
+            }
+        });
+
+        // Save Match
+        document.getElementById('matchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('m-id').value;
+            const data = {
+                game: document.getElementById('m-game').value,
+                team1_id: document.getElementById('m-t1-select').value,
+                team2_id: document.getElementById('m-t2-select').value,
+                score1: parseInt(document.getElementById('m-s1').value) || 0,
+                score2: parseInt(document.getElementById('m-s2').value) || 0,
+                status: document.getElementById('m-status').value
+            };
+
+            if(id) {
+                await supabase.from('matches').update(data).eq('id', id);
+            } else {
+                await supabase.from('matches').insert(data);
+            }
+            
+            closeModals();
+            showToast("Match Saved");
+        });
+
+        async function deleteMatch() {
+            const id = document.getElementById('m-id').value;
+            if(confirm('Delete this match?')) {
+                await supabase.from('matches').delete().eq('id', id);
+                closeModals();
+                showToast("Match Deleted");
+            }
+        }
+
+        // --- UTILS ---
+        function closeModals() {
+            document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
+        }
+
+        function showToast(msg, icon='fas fa-info-circle') {
+            const b = document.getElementById('toast-box');
+            b.innerHTML = `<div class="toast show"><i class="${icon}" style="color:var(--accent)"></i> ${msg}</div>`;
+            setTimeout(() => b.innerHTML='', 3000);
+        }
+
+        function toggleTheme() {
+            const themes = ['', 'theme-basketball', 'theme-mlbb', 'theme-pool'];
+            let current = document.body.className;
+            let idx = themes.indexOf(current);
+            let next = themes[(idx + 1) % themes.length];
+            document.body.className = next;
+        }
+    </script>
 </body>
-
 </html>
-
